@@ -1,6 +1,5 @@
 'use strict'
 
-const {Gpio} = require('pigpio')
 const delay = require('delay')
 
 module.exports = {
@@ -9,18 +8,27 @@ module.exports = {
   stop,
 }
 
-const motor = new Gpio(27, {mode: Gpio.OUTPOUT})
+let motor
+
+function getMotor() {
+  if (motor === undefined) {
+    const {Gpio} = require('pigpio')
+    motor = new Gpio(27, {mode: Gpio.OUTPOUT})
+  }
+
+  return motor
+}
 
 async function stop() {
   console.log('Stop')
-  motor.servoWrite(0)
+  getMotor().servoWrite(0)
 }
 
 async function move(time = 200, forward = true, speed = 30) {
   const fromZero = speed * (forward ? 1 : -1)
   const pulse = 1500 + fromZero
   console.log(pulse)
-  motor.servoWrite(pulse)
+  getMotor().servoWrite(pulse)
   return delay(time)
 }
 
@@ -41,7 +49,7 @@ async function ramp(time = 1000, forward = true) {
     const pulse = inBounds(prevPulse + step * multiplier)
     // Const pulse = (prevPulse + step) > maxSpeed ? maxSpeed : (prevPulse + step);
     console.log(pulse)
-    motor.servoWrite(pulse)
+    getMotor().servoWrite(pulse)
     await delay(interval)
     return pulse
   }, 1500)

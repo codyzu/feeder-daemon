@@ -3,6 +3,7 @@
 const firebase = require('firebase')
 const commands = require('./commands')
 const firebaseConfig = require('./firebase-config')
+const log = require('./logging')
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig)
@@ -38,14 +39,11 @@ async function doCommandWork(commandDocument) {
     }
   }
 
-  if (commands[commandDocument.command] === undefined) {
-    return {
-      isSuccess: false,
-      error: new Error('Command not found').stack,
-    }
-  }
-
   try {
+    if (commands[commandDocument.command] === undefined) {
+      throw new Error(`Command ${commandDocument.command} not found`)
+    }
+
     const result = await commands[commandDocument.command](
       commandDocument.options
     )
@@ -60,6 +58,7 @@ async function doCommandWork(commandDocument) {
       isSuccess: true,
     }
   } catch (error) {
+    log.error(error)
     return {
       isSuccess: false,
       error: error.stack,
@@ -108,6 +107,7 @@ async function go() {
       )
   } catch (error) {
     firebase.app().delete()
+    log.error(error)
     throw error
   }
 }

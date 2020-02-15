@@ -3,10 +3,17 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "dev": "nodemon -x 'env-cmd node daemon.js'",
+    "start": "env-cmd node daemon.js"
+  },
   "dependencies": {
+    "@google-cloud/logging": "^7.1.0",
     "delay": "^4.1.0",
     "env-cmd": "^10.0.1",
     "firebase": "^7.8.0",
+    "lodash": "^4.17.15",
+    "loglevel": "^1.6.7",
     "pigpio": "^1.2.1"
   },
   "devDependencies": {
@@ -18,11 +25,5 @@
   },
   "xo": {
     "prettier": true
-  },
-  "prettier": {
-    "semi": false,
-    "useTabs": false,
-    "tabWidth": 2,
-    "trailingComma": "es5"
   }
 }

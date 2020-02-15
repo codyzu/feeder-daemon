@@ -1,19 +1,11 @@
 'use strict'
 
+const motor = require('./motor')
+
 module.exports = {
   feed,
   console: consoleLog,
   wave,
-}
-
-let motor
-
-function getMotor() {
-  if (motor === undefined) {
-    motor = require('./motor')
-  }
-
-  return motor
 }
 
 async function feed({isForward = true, speed = 500, duration = 0} = {}) {
@@ -26,12 +18,12 @@ async function consoleLog({message = ''} = {}) {
 
 async function wave() {
   try {
-    await getMotor().move(20, true, 500)
-    await getMotor().move(20, false, 500)
+    await motor.move(20, true, 500)
+    await motor.move(20, false, 500)
     // Await getMotor().move(200, false, 100)
   } catch (error) {
     throw error
   } finally {
-    getMotor().stop()
+    motor.stop()
   }
 }
