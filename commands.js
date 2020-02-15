@@ -1,6 +1,7 @@
 'use strict'
 
 const motor = require('./motor')
+const log = require('./logging')
 
 module.exports = {
   feed,
@@ -8,21 +9,25 @@ module.exports = {
   wave,
 }
 
-async function feed({isForward = true, speed = 500, duration = 0} = {}) {
-  console.log('FEEDING:', isForward, speed, duration)
+async function feed({isForward = true, speed = 500, duration = 1000} = {}) {
+  log.debug('Feed command', {isForward, speed, duration})
+  try {
+    await motor.move(duration, isForward, speed)
+  } finally {
+    motor.stop()
+  }
 }
 
 async function consoleLog({message = ''} = {}) {
-  console.log('CONSOLE COMMAND:', message)
+  log.info('Console log command', {commandMessage: message})
 }
 
 async function wave() {
+  log.debug('Wave command')
   try {
     await motor.move(20, true, 500)
     await motor.move(20, false, 500)
     // Await getMotor().move(200, false, 100)
-  } catch (error) {
-    throw error
   } finally {
     motor.stop()
   }

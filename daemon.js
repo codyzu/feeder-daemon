@@ -13,6 +13,7 @@ go()
 async function runCommand(commandSnapshot) {
   try {
     const commandDocument = commandSnapshot.data()
+    log.info('Runing command', {commandDocument})
     const updates = await doCommandWork(commandDocument)
 
     const documentUpdates = {
@@ -20,9 +21,10 @@ async function runCommand(commandSnapshot) {
       isPending: false,
       doneAt: new Date(),
     }
-    console.log('COMMAND DONE:', documentUpdates)
+    log.info('Command done', {documentUpdates})
     await commandSnapshot.ref.update(documentUpdates)
   } catch (error) {
+    log.error(error)
     firebase.app().delete()
     throw error
   }
@@ -33,7 +35,7 @@ async function doCommandWork(commandDocument) {
     commandDocument.expiresAt !== undefined &&
     commandDocument.expiresAt.toDate() < new Date()
   ) {
-    console.log('COMMAND EXPIRED:', commandDocument)
+    log.warn('Command expired', {commandDocument})
     return {
       isExpired: true,
     }
@@ -87,13 +89,13 @@ async function go() {
       .onSnapshot(
         commandsSnapshot => {
           if (commandsSnapshot.size === 0) {
-            console.log('NO COMMANDS')
+            log.info('No commands')
             return
           }
 
           const commandSnapshot = commandsSnapshot.docs[0]
 
-          console.log('INCOMING COMMAND:', commandSnapshot.data())
+          log.info(`Incomming command ${commandSnapshot.data().command}`)
 
           commandPromise = (async () => {
             await commandPromise
