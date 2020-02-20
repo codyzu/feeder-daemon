@@ -1,3 +1,4 @@
+const {Console} = require('console')
 const log = require('loglevel')
 const {Logging} = require('@google-cloud/logging')
 const {isString} = require('lodash')
@@ -14,14 +15,22 @@ const levelMap = {
   error: 'error',
 }
 
+const logConsole = new Console({
+  stdout: process.stdout,
+  stderr: process.stderr,
+  inspectOptions: {breakLength: Infinity, compact: true},
+})
+
 const originalMethodFactory = log.methodFactory
 
 function methodFactory(methodName, logLevel, loggerName) {
-  const originalLog = originalMethodFactory(methodName, logLevel, loggerName)
+  // Skip loglevel internal logger.
+  // Instead, use our console object to force the inspect to output on a single line.
+  // const originalLog = originalMethodFactory(methodName, logLevel, loggerName)
 
   return logToGcloud
   function logToGcloud(...params) {
-    originalLog(...params)
+    logConsole[methodName](...params)
 
     // See https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry
     const entryData = Object.assign(
@@ -30,6 +39,9 @@ function methodFactory(methodName, logLevel, loggerName) {
       ...params.slice(1),
       getMessage(params)
     )
+
+    // LogConsole[methodName](entryData)
+    // OriginalLog(util.inspect(entryData))
 
     const level = levelMap[methodName]
     const entry = gCloudLog.entry(entryData)

@@ -4,8 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "nodemon -x 'env-cmd node daemon.js'",
-    "start": "env-cmd node daemon.js"
+    "dev": "nodemon -x 'env-cmd node index.js'",
+    "start": "env-cmd node index.js"
   },
   "dependencies": {
     "@google-cloud/logging": "^7.1.0",
@@ -14,7 +14,8 @@
     "firebase": "^7.8.0",
     "lodash": "^4.17.15",
     "loglevel": "^1.6.7",
-    "pigpio": "^1.2.1"
+    "pigpio": "^1.2.1",
+    "shelljs": "^0.8.3"
   },
   "devDependencies": {
     "nodemon": "^2.0.2",

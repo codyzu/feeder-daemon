@@ -5,10 +5,10 @@ const commands = require('./commands')
 const firebaseConfig = require('./firebase-config')
 const log = require('./logging')
 
+module.exports = go
+
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig)
-
-go()
 
 async function runCommand(commandSnapshot) {
   try {
