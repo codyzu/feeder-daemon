@@ -1,11 +1,20 @@
 'use strict'
 
 const firebase = require('firebase')
+const schedule = require('node-schedule')
 const firebaseConfig = require('./firebase-config')
 const runEngine = require('./engine')
 const log = require('./logging')
 
 module.exports = go
+
+const commandSchedule = [
+  {
+    command: 'console',
+    options: {message: 'hello'},
+    schedule: '00,15,30,45 * * * * *',
+  },
+]
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig)
@@ -32,6 +41,10 @@ async function runCommand(commandSnapshot) {
 let commandPromise = Promise.resolve()
 
 async function go() {
+  const jobs = commandSchedule.map(c =>
+    schedule.scheduleJob(c.schedule, () => runEngine(c))
+  )
+
   try {
     await authenticate()
     listen()
@@ -74,10 +87,7 @@ function listen() {
 
         log.info(`Incoming command ${commandSnapshot.data().command}`)
 
-        commandPromise = (async () => {
-          await commandPromise
-          runCommand(commandSnapshot)
-        })()
+        queueCommand(() => runCommand(commandSnapshot))
       },
       error => {
         log.error('Firebase listen error, shutting down.', error)
@@ -86,4 +96,11 @@ function listen() {
         throw error
       }
     )
+}
+
+function queueCommand(runFunction) {
+  commandPromise = (async () => {
+    await commandPromise
+    runFunction()
+  })()
 }
