@@ -32,7 +32,7 @@ function update() {
   // https://stackoverflow.com/questions/3258243/check-if-pull-needed-in-git#comment20583358_3258271
   const behindCommitCount = Number.parseInt(
     shell
-      .exec('git rev-list HEAD...origin/master --count')
+      .exec('git rev-list HEAD...origin/master --right-only --count')
       .stdout.split('\n')
       .filter(line => line.length > 0)[0],
     10

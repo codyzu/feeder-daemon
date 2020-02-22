@@ -1,8 +1,8 @@
 'use strict'
 
 const firebase = require('firebase')
-const commands = require('./commands')
 const firebaseConfig = require('./firebase-config')
+const runEngine = require('./engine')
 const log = require('./logging')
 
 module.exports = go
@@ -13,15 +13,14 @@ firebase.initializeApp(firebaseConfig)
 async function runCommand(commandSnapshot) {
   try {
     const commandDocument = commandSnapshot.data()
-    log.info('Runing command', {commandDocument})
-    const updates = await doCommandWork(commandDocument)
+    const updates = await runEngine(commandDocument)
 
     const documentUpdates = {
       ...updates,
       isPending: false,
       doneAt: new Date(),
     }
-    log.info('Command done', {documentUpdates})
+    log.info('Writing command results', {documentUpdates})
     await commandSnapshot.ref.update(documentUpdates)
   } catch (error) {
     log.error(error)
@@ -30,47 +29,20 @@ async function runCommand(commandSnapshot) {
   }
 }
 
-async function doCommandWork(commandDocument) {
-  if (
-    commandDocument.expiresAt !== undefined &&
-    commandDocument.expiresAt.toDate() < new Date()
-  ) {
-    log.warn('Command expired', {commandDocument})
-    return {
-      isExpired: true,
-    }
-  }
-
-  try {
-    if (commands[commandDocument.command] === undefined) {
-      throw new Error(`Command ${commandDocument.command} not found`)
-    }
-
-    const result = await commands[commandDocument.command](
-      commandDocument.options
-    )
-    if (result !== undefined) {
-      return {
-        ...result,
-        isSuccess: true,
-      }
-    }
-
-    return {
-      isSuccess: true,
-    }
-  } catch (error) {
-    log.error(error)
-    return {
-      isSuccess: false,
-      error: error.stack,
-    }
-  }
-}
-
 let commandPromise = Promise.resolve()
 
 async function go() {
+  try {
+    await authenticate()
+    listen()
+  } catch (error) {
+    log.error('Unable to connect to firebase.', error)
+    log.warn('Retrying in 30 seconds')
+    setTimeout(go, 30 * 1000)
+  }
+}
+
+async function authenticate() {
   try {
     await firebase
       .auth()
@@ -78,38 +50,40 @@ async function go() {
         process.env.FEEDER_USERNAME,
         process.env.FEEDER_PASSWORD
       )
-
-    // Process 1 command at a time
-    firebase
-      .firestore()
-      .collection('commands')
-      .where('isPending', '==', true)
-      .orderBy('createdAt')
-      .limit(1)
-      .onSnapshot(
-        commandsSnapshot => {
-          if (commandsSnapshot.size === 0) {
-            log.info('No commands')
-            return
-          }
-
-          const commandSnapshot = commandsSnapshot.docs[0]
-
-          log.info(`Incomming command ${commandSnapshot.data().command}`)
-
-          commandPromise = (async () => {
-            await commandPromise
-            runCommand(commandSnapshot)
-          })()
-        },
-        error => {
-          firebase.app().delete()
-          throw error
-        }
-      )
   } catch (error) {
-    firebase.app().delete()
-    log.error(error)
-    throw error
+    throw new Error(`Firebase Auth ${error.code} ${error.message}`)
   }
+}
+
+function listen() {
+  // Process 1 command at a time
+  const unsubscribe = firebase
+    .firestore()
+    .collection('commands')
+    .where('isPending', '==', true)
+    .orderBy('createdAt')
+    .limit(1)
+    .onSnapshot(
+      commandsSnapshot => {
+        if (commandsSnapshot.size === 0) {
+          log.info('No commands')
+          return
+        }
+
+        const commandSnapshot = commandsSnapshot.docs[0]
+
+        log.info(`Incoming command ${commandSnapshot.data().command}`)
+
+        commandPromise = (async () => {
+          await commandPromise
+          runCommand(commandSnapshot)
+        })()
+      },
+      error => {
+        log.error('Firebase listen error, shutting down.', error)
+        unsubscribe()
+        firebase.app().delete()
+        throw error
+      }
+    )
 }
