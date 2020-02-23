@@ -5,27 +5,25 @@ const log = require('./logging')
 
 module.exports = doCommandWork
 
-async function doCommandWork(commandDocument) {
-  log.info('Running command', {commandDocument})
+async function doCommandWork(command) {
+  log.info('Running command', {command})
 
   if (
-    commandDocument.expiresAt !== undefined &&
-    commandDocument.expiresAt.toDate() < new Date()
+    command.expiresAt !== undefined &&
+    command.expiresAt.toDate() < new Date()
   ) {
-    log.warn('Command expired', {commandDocument})
+    log.warn('Command expired', {command})
     return {
       isExpired: true,
     }
   }
 
   try {
-    if (commands[commandDocument.command] === undefined) {
-      throw new Error(`Command ${commandDocument.command} not found`)
+    if (commands[command.command] === undefined) {
+      throw new Error(`Command ${command.command} not found`)
     }
 
-    const result = await commands[commandDocument.command](
-      commandDocument.options
-    )
+    const result = await commands[command.command](command.options)
 
     log.debug('Command executed successfully')
 
