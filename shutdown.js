@@ -8,9 +8,9 @@ module.exports = {
 const tasks = []
 
 function addShutdownTask(task) {
-  tasks.push(task)
+  tasks.unshift(task)
 }
 
 function shutdown() {
-  tasks.reverse().forEach(task => task())
+  tasks.forEach(task => task())
 }

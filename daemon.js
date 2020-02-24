@@ -4,7 +4,10 @@ const firebase = require('firebase')
 const firebaseConfig = require('./firebase-config')
 const {addShutdownTask} = require('./shutdown')
 const startAsyncJobs = require('./jobs-async')
-const startScheduledJobs = require('./jobs-schedule')
+const {
+  listen: startScheduleListener,
+  loadLocalJobs,
+} = require('./jobs-schedule')
 const log = require('./logging')
 
 module.exports = go
@@ -17,8 +20,8 @@ async function go() {
   // Set firestore to offline mode
   // Assume eventually we will authenticate and any changes will get written back to firestore
   await firebase.firestore().disableNetwork()
+  await loadLocalJobs()
   await attemptGoOnline()
-  startScheduledJobs()
 }
 
 async function attemptGoOnline() {
@@ -33,6 +36,7 @@ async function attemptGoOnline() {
 
   // If auth was successful, enable firestore and start listening for jobs
   await firebase.firestore().enableNetwork()
+  startScheduleListener()
   startAsyncJobs()
 }
 

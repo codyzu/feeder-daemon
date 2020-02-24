@@ -18,7 +18,7 @@ const levelMap = {
 const logConsole = new Console({
   stdout: process.stdout,
   stderr: process.stderr,
-  inspectOptions: {breakLength: Infinity, compact: true},
+  inspectOptions: {breakLength: Infinity, compact: true, depth: 8},
 })
 
 const originalMethodFactory = log.methodFactory
