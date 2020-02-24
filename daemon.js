@@ -18,9 +18,11 @@ addShutdownTask(() => firebase.app().delete())
 
 async function go() {
   // Set firestore to offline mode
-  // Assume eventually we will authenticate and any changes will get written back to firestore
+  // Any executed commands before authentication will attempt to write to firestore and get cached
   await firebase.firestore().disableNetwork()
   await loadLocalJobs()
+
+  // Attempt to authenticate and go online
   await attemptGoOnline()
 }
 
@@ -50,6 +52,8 @@ async function authenticate() {
         process.env.FEEDER_PASSWORD
       )
   } catch (error) {
+    // Wrap the firebase auth error object into a real Error
+    // See https://firebase.google.com/docs/reference/node/firebase.auth.Error
     throw new Error(`Firebase Auth ${error.code} ${error.message}`)
   }
 }

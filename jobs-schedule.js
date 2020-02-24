@@ -15,37 +15,44 @@ module.exports = {
 }
 
 const jobFile = './jobs.json'
-let cachedJobs
+let cachedJobsSchedule = []
+let jobs = []
 
-function startScheduledJobs() {
+function startScheduledJobs(newJobsSchedule) {
   log.info('Scheduling jobs')
-  cachedJobs.forEach(c => {
+
+  log.info('Cancelling existing jobs')
+  jobs.forEach(job => job.cancel())
+
+  cachedJobsSchedule = newJobsSchedule
+
+  jobs = cachedJobsSchedule.map(c => {
     log.debug('Scheduling job', {command: c})
-    const job = schedule.scheduleJob(c.schedule, () =>
+    return schedule.scheduleJob(c.schedule, () =>
       enqueueJob({
         documentRef: firebase
           .firestore()
-          .collection('commands')
+          .collection('jobs')
           .doc(),
         command: c,
       })
     )
-
-    addShutdownTask(() => job.cancel())
   })
+
+  jobs.forEach(job => addShutdownTask(() => job.cancel()))
 }
 
 async function loadLocalJobs() {
-  cachedJobs = JSON.parse(await fs.readFile(jobFile))
-  log.info('Loaded local copy of scheduled jobs', {jobs: cachedJobs})
-  startScheduledJobs()
+  const localJobs = JSON.parse(await fs.readFile(jobFile))
+  log.info('Loaded local copy of scheduled jobs', {jobs: localJobs})
+  startScheduledJobs(localJobs)
 }
 
 function listen() {
   // Process 1 command at a time
   const unsubscribe = firebase
     .firestore()
-    .collection('scheduledJobs')
+    .collection('jobsSchedule')
     .where('isEnabled', '==', true)
     .onSnapshot(
       async jobsSnapshot => {
@@ -64,15 +71,14 @@ function listen() {
           })
           .map(document => document.data())
 
-        if (isEqual(cachedJobs, sortedJobs)) {
+        if (isEqual(cachedJobsSchedule, sortedJobs)) {
           log.debug('No scheduled jobs changes, ignoring update')
           return
         }
 
         log.info('Scheduled jobs changed, storing updates')
-        await fs.writeFile(jobFile, JSON.stringify(sortedJobs))
-        cachedJobs = sortedJobs
-        startScheduledJobs()
+        await fs.writeFile(jobFile, JSON.stringify(sortedJobs, null, 2))
+        startScheduledJobs(sortedJobs)
       },
       error => {
         log.error('Error listening to job schedule, shutting down.', error)

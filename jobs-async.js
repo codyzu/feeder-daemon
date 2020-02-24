@@ -11,7 +11,7 @@ function listen() {
   // Process 1 command at a time
   const unsubscribe = firebase
     .firestore()
-    .collection('commands')
+    .collection('jobs')
     .where('isPending', '==', true)
     .orderBy('createdAt')
     .limit(1)
