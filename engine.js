@@ -8,10 +8,7 @@ module.exports = doCommandWork
 async function doCommandWork(command) {
   log.info('Running command', {command})
 
-  if (
-    command.expiresAt !== undefined &&
-    command.expiresAt.toDate() < new Date()
-  ) {
+  if (command.expiresAt !== undefined && command.expiresAt < new Date()) {
     log.warn('Command expired', {command})
     return {
       isExpired: true,

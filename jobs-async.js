@@ -26,9 +26,18 @@ function listen() {
 
         log.info(`Incoming command ${commandSnapshot.data().command}`)
 
+        const job = {...commandSnapshot.data()}
+        if (job.createdAt !== undefined) {
+          job.createdAt = job.createdAt.toDate()
+        }
+
+        if (job.expiresAt !== undefined) {
+          job.expiresAt = job.expiresAt.toDate()
+        }
+
         enqueueJob({
           documentRef: commandSnapshot.ref,
-          command: commandSnapshot.data(),
+          command: job,
         })
       },
       error => {
