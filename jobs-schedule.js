@@ -34,7 +34,7 @@ function startScheduledJobs(newJobsSchedule) {
           .firestore()
           .collection('jobs')
           .doc(),
-        command: c,
+        command: {createdAt: new Date(), ...c},
       })
     )
   })
