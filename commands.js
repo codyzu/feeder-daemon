@@ -40,23 +40,29 @@ async function wave() {
 
 async function exit() {
   log.debug('Exit command')
-  return () => {
-    shutdown.shutdown()
+  return {
+    postSave: () => {
+      shutdown.shutdown()
+    },
   }
 }
 
 async function rebootSystem() {
   log.debug('Reboot System command')
-  return () => {
-    shutdown.shutdown()
-    shell.exec('reboot')
+  return {
+    postSave: () => {
+      shutdown.shutdown()
+      shell.exec('reboot')
+    },
   }
 }
 
 async function shutdownSystem() {
   log.debug('Shutdown System command')
-  return () => {
-    shutdown.shutdown()
-    shell.exec('shutdown -h now')
+  return {
+    postSave: () => {
+      shutdown.shutdown()
+      shell.exec('shutdown -h now')
+    },
   }
 }

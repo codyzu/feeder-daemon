@@ -8,6 +8,7 @@ const enqueueJob = require('./job-queue')
 const {addShutdownTask} = require('./shutdown')
 const log = require('./logging')
 const {shutdown} = require('./shutdown')
+const runJob = require('./engine')
 
 module.exports = {
   loadLocalJobs,
@@ -28,15 +29,17 @@ function startScheduledJobs(newJobsSchedule) {
 
   jobs = cachedJobsSchedule.map(c => {
     log.debug('Scheduling job', {command: c})
-    return schedule.scheduleJob(c.schedule, () =>
-      enqueueJob({
+
+    const job = () =>
+      runJob({
         documentRef: firebase
           .firestore()
           .collection('jobs')
           .doc(),
         command: {createdAt: new Date(), ...c},
       })
-    )
+
+    return schedule.scheduleJob(c.schedule, () => enqueueJob(job))
   })
 
   jobs.forEach(job => addShutdownTask(() => job.cancel()))

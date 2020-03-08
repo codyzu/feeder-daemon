@@ -4,6 +4,7 @@ const firebase = require('firebase')
 const log = require('./logging')
 const enqueueJob = require('./job-queue')
 const {addShutdownTask, shutdown} = require('./shutdown')
+const runJob = require('./engine')
 
 module.exports = listen
 
@@ -35,10 +36,12 @@ function listen() {
           job.expiresAt = job.expiresAt.toDate()
         }
 
-        enqueueJob({
-          documentRef: commandSnapshot.ref,
-          command: job,
-        })
+        enqueueJob(() =>
+          runJob({
+            documentRef: commandSnapshot.ref,
+            command: job,
+          })
+        )
       },
       error => {
         log.error('Firebase listen error, shutting down.', error)
