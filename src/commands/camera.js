@@ -31,7 +31,7 @@ async function captureImage() {
     fileExentsion: '.jpg',
     // --skip 30 to let the webcam stablize and focus before capturing the image
     generateCaptureCommand: filePath =>
-      `fswebcam --resolution 1280x720 --skip 30 --jpeg 85 "${filePath}"`,
+      `fswebcam --resolution 1280x720 --skip 30 --title "Jean-Chorizo" --rotate 270 --jpeg 85 "${filePath}"`,
     storageBasePath: 'images',
     documentKey: 'lastImage',
   })
